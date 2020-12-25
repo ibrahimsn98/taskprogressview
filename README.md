@@ -38,8 +38,10 @@ taskProgressView.focusRange(Calendar.getInstance())
 ```
 
 ## TODO
-[ ] Add different range types like week, month, year
-[ ] Add task description popup
+
+- [ ] Different range types like week, month, year
+- [ ] Horizontal scrolling feature 
+- [ ] Task description popup
 
 
 ## Setup
