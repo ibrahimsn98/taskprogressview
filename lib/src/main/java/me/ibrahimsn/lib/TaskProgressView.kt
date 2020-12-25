@@ -7,7 +7,7 @@ import android.graphics.*
 import android.util.AttributeSet
 import android.view.MotionEvent
 import android.view.View
-import android.view.animation.AccelerateDecelerateInterpolator
+import android.view.animation.OvershootInterpolator
 import java.util.*
 import kotlin.math.abs
 
@@ -49,7 +49,7 @@ class TaskProgressView @JvmOverloads constructor(
     // Animators
     private val animator = ValueAnimator.ofFloat().apply {
         duration = ANIMATION_DURATION
-        interpolator = AccelerateDecelerateInterpolator()
+        interpolator = OvershootInterpolator()
     }
 
     // Core Attributes
@@ -85,6 +85,8 @@ class TaskProgressView @JvmOverloads constructor(
         get() = _taskLineWidth
         set(value) {
             _taskLineWidth = value
+            paintTask.strokeWidth = value
+            paintProgress.strokeWidth = value
             invalidate()
         }
 
@@ -202,18 +204,18 @@ class TaskProgressView @JvmOverloads constructor(
         var start = head.get(Calendar.DAY_OF_MONTH)
         val monthDayCount = head.getActualMaximum(Calendar.DAY_OF_MONTH)
 
-        for (i in 1..7) {
+        for (i in 1..rangeLength) {
             if (start > monthDayCount) start = 1
             canvas.drawTextCentred("${start++}", rangeSize * (i - 1f) + sidePadding, 20f, paintDateText)
         }
     }
 
     private fun renderDateLines(canvas: Canvas) {
-        for (i in 1..7) {
+        for (i in 1..rangeLength) {
             canvas.drawLine(
-                rangeSize * (i - 1f) + sidePadding,
+                rangeSize * (i - 1) + sidePadding,
                 taskDateMargin + paintDateText.textSize,
-                rangeSize * (i - 1f) + sidePadding,
+                rangeSize * (i - 1) + sidePadding,
                 height.toFloat(),
                 paintDateLine
             )
@@ -221,8 +223,8 @@ class TaskProgressView @JvmOverloads constructor(
     }
 
     private fun renderTasks(canvas: Canvas) {
-        for ((i, task) in tasks.withIndex()) {
-            if (task.endTime > viewStartTime && task.startTime < viewEndTime) {
+        for (task in tasks) {
+            if (task.endTime > viewStartTime - DAY_MULTIPLIER && task.startTime < viewEndTime + DAY_MULTIPLIER) {
                 val taskWidth = ((task.endTime - task.startTime) / DAY_MULTIPLIER) * rangeSize
                 val startPoint = sidePadding + (((task.startTime - head.timeInMillis) / DAY_MULTIPLIER) * rangeSize)
                 val endPoint = startPoint + taskWidth
@@ -231,16 +233,16 @@ class TaskProgressView @JvmOverloads constructor(
 
                 canvas.drawLine(
                     startPoint,
-                    taskDateTextSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * task.category,
                     endPoint,
-                    taskDateTextSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * task.category,
                     paintTask
                 )
                 canvas.drawLine(
                     startPoint,
-                    taskDateTextSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * task.category,
                     startPoint + (endPoint - startPoint) / 100 * task.progress,
-                    taskDateTextSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * task.category,
                     paintProgress
                 )
             }
@@ -248,16 +250,15 @@ class TaskProgressView @JvmOverloads constructor(
     }
 
     private fun getTaskRect(task: Task): RectF {
-        val taskIndex = tasks.indexOf(task)
         val taskWidth = ((task.endTime - task.startTime) / DAY_MULTIPLIER) * rangeSize
         val startPoint = sidePadding + (((task.startTime - head.timeInMillis) / DAY_MULTIPLIER) * rangeSize)
         val endPoint = startPoint + taskWidth
 
         taskRect.set(
             startPoint,
-            taskDateTextSize + taskLineSpacing * (taskIndex + 1) - taskLineWidth,
+            taskDateTextSize + taskLineSpacing * task.category - taskLineWidth,
             endPoint,
-            taskDateTextSize + taskLineSpacing * (taskIndex + 1) + taskLineWidth
+            taskDateTextSize + taskLineSpacing * task.category + taskLineWidth
         )
         return taskRect
     }

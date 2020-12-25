@@ -4,6 +4,7 @@ import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
 import android.util.Log
+import android.widget.Button
 import me.ibrahimsn.lib.Task
 import me.ibrahimsn.lib.TaskProgressView
 import java.util.*
@@ -13,76 +14,100 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        val task = findViewById<TaskProgressView>(R.id.task)
+        val taskProgressView = findViewById<TaskProgressView>(R.id.taskProgressView)
 
-        task.onTaskClickListener = {
-            Log.d("###", "Task clicked: $it")
+        val buttonToday = findViewById<Button>(R.id.buttonToday)
+        val buttonNextWeek = findViewById<Button>(R.id.buttonNextWeek)
+
+        taskProgressView.onTaskClickListener = {
+            Log.d("###", "On task click: $it")
         }
 
-        task.setTasks(
+        taskProgressView.setTasks(
             listOf(
                 Task(
-                    "",
+                    0,
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 1)
+                        add(Calendar.DAY_OF_WEEK, 1)
                     },
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 4)
+                        add(Calendar.DAY_OF_WEEK, 4)
                     },
                     60,
+                    1,
                     Color.parseColor("#f1c40f")
                 ),
                 Task(
-                    "",
+                    1,
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 2)
+                        add(Calendar.DAY_OF_WEEK, 2)
                     },
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 9)
+                        add(Calendar.DAY_OF_WEEK, 9)
                     },
                     80,
+                    2,
                     Color.parseColor("#5eab3d")
                 ),
                 Task(
-                    "",
+                    2,
+                    Calendar.getInstance(),
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 2)
-                    },
-                    Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 5)
+                        add(Calendar.DAY_OF_WEEK, 5)
                     },
                     40,
+                    3,
                     Color.parseColor("#e74c3c")
                 ),
                 Task(
-                    "",
+                    3,
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 1)
+                        add(Calendar.DAY_OF_WEEK, 8)
                     },
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 4)
+                        add(Calendar.DAY_OF_WEEK, 11)
+                    },
+                    40,
+                    3,
+                    Color.parseColor("#e74c3c")
+                ),
+                Task(
+                    4,
+                    Calendar.getInstance().apply {
+                        this.add(Calendar.DAY_OF_WEEK, 5)
+                    },
+                    Calendar.getInstance().apply {
+                        this.add(Calendar.DAY_OF_WEEK, 12)
                     },
                     60,
+                    4,
                     Color.parseColor("#9b59b6")
                 ),
                 Task(
-                    "",
+                    5,
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 1)
+                        add(Calendar.DAY_OF_WEEK, 1)
                     },
                     Calendar.getInstance().apply {
-                        this.add(Calendar.DAY_OF_WEEK, 4)
+                        add(Calendar.DAY_OF_WEEK, 4)
                     },
                     60,
+                    5,
                     Color.parseColor("#3498db")
                 ),
             )
         )
 
-        task.focusRange(Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-        })
+        taskProgressView.focusRange(Calendar.getInstance())
+
+        buttonToday.setOnClickListener {
+            taskProgressView.focusRange(Calendar.getInstance())
+        }
+
+        buttonNextWeek.setOnClickListener {
+            taskProgressView.focusRange(Calendar.getInstance().apply {
+                add(Calendar.WEEK_OF_MONTH, 1)
+            })
+        }
     }
 }
