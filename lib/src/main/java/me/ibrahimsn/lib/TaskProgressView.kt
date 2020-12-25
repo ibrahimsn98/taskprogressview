@@ -5,9 +5,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
+import android.view.animation.AccelerateDecelerateInterpolator
 import java.util.*
 import kotlin.math.abs
 
@@ -17,42 +17,113 @@ class TaskProgressView @JvmOverloads constructor(
     defStyleAttr: Int = 0
 ) : View(context, attrs, defStyleAttr) {
 
+    // Attribute Defaults
+    private var _sidePadding = 60f
+
+    private var _rangeLength = 7
+
+    private var _taskDateMargin = 20f
+
+    private var _taskDateTextSize = 40f
+
+    private var _taskLineWidth = 25f
+
+    private var _taskLineSpacing = 80f
+
+    // Constant Objects
     private val textBounds = Rect()
-
-    private val sidePadding = 60f
-
-    private val rangeLength = 7
-
-    private var taskLineWidth = 25f
-
-    private var taskLineSpacing = 80f
-
-    private var head = Calendar.getInstance()
-
-    private val rangeSize get() = (width - sidePadding * 2) / (rangeLength - 1)
 
     private val taskRect = RectF()
 
     private val tasks = mutableListOf<Task>()
 
+    private var head = Calendar.getInstance()
+
+    // Global Getters
+    private val rangeSize get() = (width - sidePadding * 2) / (rangeLength - 1)
+
+    private val viewStartTime get() = head.timeInMillis
+
+    private val viewEndTime get() = viewStartTime + (rangeLength - 1) * DAY_MULTIPLIER
+
+    // Animators
+    private val animator = ValueAnimator.ofFloat().apply {
+        duration = ANIMATION_DURATION
+        interpolator = AccelerateDecelerateInterpolator()
+    }
+
+    // Core Attributes
+    var sidePadding: Float
+        get() = _sidePadding
+        set(value) {
+            _sidePadding = value
+            invalidate()
+        }
+
+    var rangeLength: Int
+        get() = _rangeLength
+        set(value) {
+            _rangeLength = value
+            invalidate()
+        }
+
+    var taskDateMargin: Float
+        get() = _taskDateMargin
+        set(value) {
+            _taskDateMargin = value
+            invalidate()
+        }
+
+    var taskDateTextSize: Float
+        get() = _taskDateTextSize
+        set(value) {
+            _taskDateTextSize = value
+            invalidate()
+        }
+
+    var taskLineWidth: Float
+        get() = _taskLineWidth
+        set(value) {
+            _taskLineWidth = value
+            invalidate()
+        }
+
+    var taskLineSpacing: Float
+        get() = _taskLineSpacing
+        set(value) {
+            _taskLineSpacing = value
+            invalidate()
+        }
+
+    var taskDateTextColor: Int
+        get() = paintDateText.color
+        set(value) {
+            paintDateText.color = value
+            invalidate()
+        }
+
+    // Listeners
+    var onTaskClickListener: ((Task) -> Unit)? = null
+
+    // Paints
     private val paintDateText = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.FILL
-        color = Color.parseColor("#5e5e5e")
-        textSize = 40f
+        color = DEFAULT_DATE_TEXT_COLOR
+        textSize = taskDateTextSize
     }
 
     private val paintDateLine = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.STROKE
-        color = Color.parseColor("#f1f1f1")
-        strokeWidth = 2f
+        color = DEFAULT_DATE_LINE_COLOR
+        strokeWidth = TASK_STROKE_WIDTH
     }
 
     private val paintTask = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.FILL
-        color = Color.parseColor("#eaeaea")
+        color = DEFAULT_TASK_BACKGROUND_COLOR
         strokeWidth = taskLineWidth
         strokeCap = Paint.Cap.ROUND
     }
@@ -62,6 +133,62 @@ class TaskProgressView @JvmOverloads constructor(
         style = Paint.Style.FILL
         strokeWidth = taskLineWidth
         strokeCap = Paint.Cap.ROUND
+    }
+
+    init {
+        obtainStyledAttributes(attrs, defStyleAttr)
+    }
+
+    private fun obtainStyledAttributes(attrs: AttributeSet?, defStyleAttr: Int) {
+        val typedArray = context.theme.obtainStyledAttributes(
+            attrs,
+            R.styleable.TaskProgressView,
+            defStyleAttr,
+            0
+        )
+
+        try {
+            with(typedArray) {
+                sidePadding = getDimension(
+                    R.styleable.TaskProgressView_sidePadding,
+                    sidePadding
+                )
+
+                rangeLength = getInt(
+                    R.styleable.TaskProgressView_rangeLength,
+                    rangeLength
+                )
+
+                taskDateMargin = getDimension(
+                    R.styleable.TaskProgressView_taskDateMargin,
+                    taskDateMargin
+                )
+
+                taskDateTextSize = getDimension(
+                    R.styleable.TaskProgressView_taskDateTextSize,
+                    taskDateTextSize
+                )
+
+                taskLineWidth = getDimension(
+                    R.styleable.TaskProgressView_taskLineWidth,
+                    taskLineWidth
+                )
+
+                taskLineSpacing = getDimension(
+                    R.styleable.TaskProgressView_taskLineSpacing,
+                    taskLineSpacing
+                )
+
+                taskDateTextColor = getColor(
+                    R.styleable.TaskProgressView_taskDateTextColor,
+                    taskDateTextColor
+                )
+            }
+        } catch (e: Exception) {
+            // ignored
+        } finally {
+            typedArray.recycle()
+        }
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -85,7 +212,7 @@ class TaskProgressView @JvmOverloads constructor(
         for (i in 1..7) {
             canvas.drawLine(
                 rangeSize * (i - 1f) + sidePadding,
-                20f + paintDateText.textSize,
+                taskDateMargin + paintDateText.textSize,
                 rangeSize * (i - 1f) + sidePadding,
                 height.toFloat(),
                 paintDateLine
@@ -94,32 +221,26 @@ class TaskProgressView @JvmOverloads constructor(
     }
 
     private fun renderTasks(canvas: Canvas) {
-        val viewStartTime = head.timeInMillis
-        val viewEndTime = viewStartTime + (rangeLength - 1) * 1000 * 60 * 60 * 24
-
         for ((i, task) in tasks.withIndex()) {
-            val taskStartTime = task.startDate.timeInMillis.toFloat()
-            val taskEndTime = task.endDate.timeInMillis.toFloat()
-
-            if (taskEndTime > viewStartTime && taskStartTime < viewEndTime) {
-                val taskWidth = ((taskEndTime - taskStartTime) / (1000 * 60 * 60 * 24)) * rangeSize
-                val startPoint = sidePadding + (((taskStartTime - head.timeInMillis) / (1000 * 60 * 60 * 24)) * rangeSize)
+            if (task.endTime > viewStartTime && task.startTime < viewEndTime) {
+                val taskWidth = ((task.endTime - task.startTime) / DAY_MULTIPLIER) * rangeSize
+                val startPoint = sidePadding + (((task.startTime - head.timeInMillis) / DAY_MULTIPLIER) * rangeSize)
                 val endPoint = startPoint + taskWidth
 
                 paintProgress.color = task.color
 
                 canvas.drawLine(
                     startPoint,
-                    paintDateText.textSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * (i + 1),
                     endPoint,
-                    paintDateText.textSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * (i + 1),
                     paintTask
                 )
                 canvas.drawLine(
                     startPoint,
-                    paintDateText.textSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * (i + 1),
                     startPoint + (endPoint - startPoint) / 100 * task.progress,
-                    paintDateText.textSize + taskLineSpacing * (i + 1),
+                    taskDateTextSize + taskLineSpacing * (i + 1),
                     paintProgress
                 )
             }
@@ -127,20 +248,16 @@ class TaskProgressView @JvmOverloads constructor(
     }
 
     private fun getTaskRect(task: Task): RectF {
-        val taskStartTime = task.startDate.timeInMillis.toFloat()
-        val taskEndTime = task.endDate.timeInMillis.toFloat()
-
-        val taskWidth = ((taskEndTime - taskStartTime) / (1000 * 60 * 60 * 24)) * rangeSize
-        val startPoint = sidePadding + (((taskStartTime - head.timeInMillis) / (1000 * 60 * 60 * 24)) * rangeSize)
-        val endPoint = startPoint + taskWidth
-
         val taskIndex = tasks.indexOf(task)
+        val taskWidth = ((task.endTime - task.startTime) / DAY_MULTIPLIER) * rangeSize
+        val startPoint = sidePadding + (((task.startTime - head.timeInMillis) / DAY_MULTIPLIER) * rangeSize)
+        val endPoint = startPoint + taskWidth
 
         taskRect.set(
             startPoint,
-            paintDateText.textSize + taskLineSpacing * (taskIndex + 1) - taskLineWidth,
+            taskDateTextSize + taskLineSpacing * (taskIndex + 1) - taskLineWidth,
             endPoint,
-            paintDateText.textSize + taskLineSpacing * (taskIndex + 1) + taskLineWidth
+            taskDateTextSize + taskLineSpacing * (taskIndex + 1) + taskLineWidth
         )
         return taskRect
     }
@@ -153,33 +270,57 @@ class TaskProgressView @JvmOverloads constructor(
 
     fun focusRange(head: Calendar) {
         post {
-            val animator = ValueAnimator.ofFloat(this.head.timeInMillis.toFloat(), head.timeInMillis.toFloat())
-
-            animator.addUpdateListener {
-                this.head.timeInMillis = (it.animatedValue as Float).toLong()
-                invalidate()
-            }
-
-            animator.duration = 500
+            animator.setFloatValues(
+                this.head.timeInMillis.toFloat(),
+                head.timeInMillis.toFloat()
+            )
             animator.start()
         }
     }
 
+    private val animatorUpdateListener = ValueAnimator.AnimatorUpdateListener {
+        head.timeInMillis = (it.animatedValue as Float).toLong()
+        invalidate()
+    }
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP && abs(event.downTime - event.eventTime) < 500) {
+        if (event.action == MotionEvent.ACTION_UP && abs(event.downTime - event.eventTime) < TOUCH_EVENT_DURATION) {
             for (task in tasks) {
                 if (getTaskRect(task).contains(event.x, event.y)) {
+                    onTaskClickListener?.invoke(task)
                     focusRange(task.startDate)
+                    return true
                 }
             }
         }
-
         return true
+    }
+
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        animator.addUpdateListener(animatorUpdateListener)
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        animator.removeUpdateListener(animatorUpdateListener)
+        animator.cancel()
     }
 
     private fun Canvas.drawTextCentred(text: String, cx: Float, cy: Float, paint: Paint) {
         paint.getTextBounds(text, 0, text.length, textBounds)
         drawText(text, cx - textBounds.exactCenterX(), cy - textBounds.exactCenterY(), paint)
+    }
+
+    companion object {
+        private const val DAY_MULTIPLIER = 86400000 // 1000 * 60 * 60 * 24
+        private const val TOUCH_EVENT_DURATION = 500
+        private const val TASK_STROKE_WIDTH = 2f
+        private const val ANIMATION_DURATION = 500L
+
+        private val DEFAULT_DATE_TEXT_COLOR = Color.parseColor("#5e5e5e")
+        private val DEFAULT_DATE_LINE_COLOR = Color.parseColor("#f1f1f1")
+        private val DEFAULT_TASK_BACKGROUND_COLOR = Color.parseColor("#eaeaea")
     }
 }

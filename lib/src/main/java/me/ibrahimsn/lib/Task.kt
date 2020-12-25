@@ -10,3 +10,7 @@ data class Task(
     val progress: Int,
     @ColorInt val color: Int,
 )
+
+val Task.startTime get() = startDate.timeInMillis.toFloat()
+
+val Task.endTime get() = endDate.timeInMillis.toFloat()

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <declare-styleable name="TaskProgressView">
+        <attr name="sidePadding" format="dimension" />
+        <attr name="rangeLength" format="integer" />
+        <attr name="taskDateMargin" format="dimension" />
+        <attr name="taskDateTextSize" format="dimension" />
+        <attr name="taskLineWidth" format="dimension" />
+        <attr name="taskLineSpacing" format="dimension" />
+        <attr name="taskDateTextColor" format="color" />
+    </declare-styleable>
+
+</resources>

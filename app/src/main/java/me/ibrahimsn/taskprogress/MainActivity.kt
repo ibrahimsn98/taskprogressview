@@ -3,6 +3,7 @@ package me.ibrahimsn.taskprogress
 import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.util.Log
 import me.ibrahimsn.lib.Task
 import me.ibrahimsn.lib.TaskProgressView
 import java.util.*
@@ -13,6 +14,10 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
 
         val task = findViewById<TaskProgressView>(R.id.task)
+
+        task.onTaskClickListener = {
+            Log.d("###", "Task clicked: $it")
+        }
 
         task.setTasks(
             listOf(
