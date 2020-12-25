@@ -5,7 +5,8 @@ import java.util.*
 
 data class Task(
     val id: String,
-    val startDate: Date,
-    val endDate: Date,
-    @ColorInt val color: Int
+    val startDate: Calendar,
+    val endDate: Calendar,
+    val progress: Int,
+    @ColorInt val color: Int,
 )

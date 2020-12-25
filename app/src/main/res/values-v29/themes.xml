@@ -1,5 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
+
     <style name="Theme.Taskprogress" parent="Theme.MaterialComponents.Light.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/white</item>
@@ -14,5 +15,7 @@
         <!-- Customize your theme here. -->
 
         <item name="android:windowBackground">@color/white</item>
+        <item name="android:forceDarkAllowed">false</item>
+
     </style>
 </resources>
