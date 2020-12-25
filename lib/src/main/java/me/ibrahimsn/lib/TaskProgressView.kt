@@ -26,8 +26,6 @@ class TaskProgressView @JvmOverloads constructor(
 
     private var _taskDateTextSize = 40f
 
-    private var _taskLineWidth = 25f
-
     private var _taskLineSpacing = 80f
 
     // Constant Objects
@@ -82,9 +80,8 @@ class TaskProgressView @JvmOverloads constructor(
         }
 
     var taskLineWidth: Float
-        get() = _taskLineWidth
+        get() = paintTask.strokeWidth
         set(value) {
-            _taskLineWidth = value
             paintTask.strokeWidth = value
             paintProgress.strokeWidth = value
             invalidate()
@@ -126,14 +123,14 @@ class TaskProgressView @JvmOverloads constructor(
         isAntiAlias = true
         style = Paint.Style.FILL
         color = DEFAULT_TASK_BACKGROUND_COLOR
-        strokeWidth = taskLineWidth
+        strokeWidth = TASK_LINE_WIDTH
         strokeCap = Paint.Cap.ROUND
     }
 
     private val paintProgress = Paint().apply {
         isAntiAlias = true
         style = Paint.Style.FILL
-        strokeWidth = taskLineWidth
+        strokeWidth = TASK_LINE_WIDTH
         strokeCap = Paint.Cap.ROUND
     }
 
@@ -319,6 +316,7 @@ class TaskProgressView @JvmOverloads constructor(
         private const val TOUCH_EVENT_DURATION = 500
         private const val TASK_STROKE_WIDTH = 2f
         private const val ANIMATION_DURATION = 500L
+        private const val TASK_LINE_WIDTH = 25f
 
         private val DEFAULT_DATE_TEXT_COLOR = Color.parseColor("#5e5e5e")
         private val DEFAULT_DATE_LINE_COLOR = Color.parseColor("#f1f1f1")

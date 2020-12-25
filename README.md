@@ -57,6 +57,11 @@ dependencies {
 }
 ```
 
+## Design Credits
+
+All design and inspiration credits belong to [Mustofa Amar](https://dribbble.com/mustofaamar).
+
+
 ## License
 ```
 MIT License
