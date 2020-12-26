@@ -2,6 +2,7 @@
 <resources>
 
     <declare-styleable name="TaskProgressView">
+        <attr name="scrollingEnabled" format="boolean" />
         <attr name="sidePadding" format="dimension" />
         <attr name="rangeLength" format="integer" />
         <attr name="taskDateMargin" format="dimension" />

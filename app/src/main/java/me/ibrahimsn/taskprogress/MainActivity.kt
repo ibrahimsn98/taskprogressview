@@ -18,6 +18,7 @@ class MainActivity : AppCompatActivity() {
 
         val buttonToday = findViewById<Button>(R.id.buttonToday)
         val buttonNextWeek = findViewById<Button>(R.id.buttonNextWeek)
+        val buttonToggleScrolling = findViewById<Button>(R.id.buttonToggleScrolling)
 
         taskProgressView.onTaskClickListener = {
             Log.d("###", "On task click: $it")
@@ -108,6 +109,12 @@ class MainActivity : AppCompatActivity() {
             taskProgressView.focusRange(Calendar.getInstance().apply {
                 add(Calendar.WEEK_OF_MONTH, 1)
             })
+        }
+
+        buttonToggleScrolling.setOnClickListener {
+            taskProgressView.scrollingEnabled = !taskProgressView.scrollingEnabled
+            val text = if (taskProgressView.scrollingEnabled) "Disable scrolling" else "Enable scrolling"
+            buttonToggleScrolling.text = text
         }
     }
 }

@@ -5,11 +5,13 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.OvershootInterpolator
+import androidx.dynamicanimation.animation.FlingAnimation
+import androidx.dynamicanimation.animation.FloatPropertyCompat
 import java.util.*
-import kotlin.math.abs
 
 class TaskProgressView @JvmOverloads constructor(
     context: Context,
@@ -37,6 +39,8 @@ class TaskProgressView @JvmOverloads constructor(
 
     private var head = Calendar.getInstance()
 
+    private val flingAnimation = FlingAnimation(this, HEAD_TRANSLATION)
+
     // Global Getters
     private val rangeSize get() = (width - sidePadding * 2) / (rangeLength - 1)
 
@@ -50,7 +54,66 @@ class TaskProgressView @JvmOverloads constructor(
         interpolator = OvershootInterpolator()
     }
 
+    // Gestures
+    private val gestureListener = object : GestureDetector.SimpleOnGestureListener() {
+        override fun onDown(event: MotionEvent) = true
+
+        override fun onSingleTapUp(event: MotionEvent): Boolean {
+            for (task in tasks) {
+                if (getTaskRect(task).contains(event.x, event.y)) {
+                    onTaskClickListener?.invoke(task)
+                    focusRange(task.startDate)
+                    return true
+                }
+            }
+            return false
+        }
+
+        override fun onScroll(
+            event1: MotionEvent,
+            event2: MotionEvent,
+            distanceX: Float,
+            distanceY: Float
+        ): Boolean {
+            if (scrollingEnabled) {
+                val distanceFactor = distanceX / (width - sidePadding * 2)
+                currentTimeInMillis += ((viewEndTime - viewStartTime) * distanceFactor).toLong()
+                return true
+            }
+            return false
+        }
+
+        override fun onFling(
+            event1: MotionEvent,
+            event2: MotionEvent,
+            velocityX: Float,
+            velocityY: Float
+        ): Boolean {
+            if (scrollingEnabled) {
+                animator.cancel()
+                val velocityFactor = velocityX / (width - sidePadding * 2)
+                flingAnimation.apply {
+                    cancel()
+                    setStartVelocity(-velocityFactor * (viewEndTime - viewStartTime))
+                    start()
+                }
+                return true
+            }
+            return false
+        }
+    }
+
+    private val gestureDetector = GestureDetector(context, gestureListener)
+
     // Core Attributes
+    var scrollingEnabled: Boolean = true
+        set(value) {
+            field = value
+            if (!value) {
+                flingAnimation.cancel()
+            }
+        }
+
     var sidePadding: Float
         get() = _sidePadding
         set(value) {
@@ -101,6 +164,15 @@ class TaskProgressView @JvmOverloads constructor(
             invalidate()
         }
 
+    private var currentTimeInMillis: Long
+        get() = head.timeInMillis
+        set(value) {
+            animator.cancel()
+            flingAnimation.cancel()
+            head.timeInMillis = value
+            invalidate()
+        }
+
     // Listeners
     var onTaskClickListener: ((Task) -> Unit)? = null
 
@@ -148,6 +220,11 @@ class TaskProgressView @JvmOverloads constructor(
 
         try {
             with(typedArray) {
+                scrollingEnabled = getBoolean(
+                    R.styleable.TaskProgressView_scrollingEnabled,
+                    scrollingEnabled
+                )
+
                 sidePadding = getDimension(
                     R.styleable.TaskProgressView_sidePadding,
                     sidePadding
@@ -268,6 +345,7 @@ class TaskProgressView @JvmOverloads constructor(
 
     fun focusRange(head: Calendar) {
         post {
+            flingAnimation.cancel()
             animator.setFloatValues(
                 this.head.timeInMillis.toFloat(),
                 head.timeInMillis.toFloat()
@@ -282,18 +360,7 @@ class TaskProgressView @JvmOverloads constructor(
     }
 
     @SuppressLint("ClickableViewAccessibility")
-    override fun onTouchEvent(event: MotionEvent): Boolean {
-        if (event.action == MotionEvent.ACTION_UP && abs(event.downTime - event.eventTime) < TOUCH_EVENT_DURATION) {
-            for (task in tasks) {
-                if (getTaskRect(task).contains(event.x, event.y)) {
-                    onTaskClickListener?.invoke(task)
-                    focusRange(task.startDate)
-                    return true
-                }
-            }
-        }
-        return true
-    }
+    override fun onTouchEvent(event: MotionEvent) = gestureDetector.onTouchEvent(event)
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
@@ -304,6 +371,7 @@ class TaskProgressView @JvmOverloads constructor(
         super.onDetachedFromWindow()
         animator.removeUpdateListener(animatorUpdateListener)
         animator.cancel()
+        flingAnimation.cancel()
     }
 
     private fun Canvas.drawTextCentred(text: String, cx: Float, cy: Float, paint: Paint) {
@@ -313,7 +381,6 @@ class TaskProgressView @JvmOverloads constructor(
 
     companion object {
         private const val DAY_MULTIPLIER = 86400000 // 1000 * 60 * 60 * 24
-        private const val TOUCH_EVENT_DURATION = 500
         private const val TASK_STROKE_WIDTH = 2f
         private const val ANIMATION_DURATION = 500L
         private const val TASK_LINE_WIDTH = 25f
@@ -321,5 +388,14 @@ class TaskProgressView @JvmOverloads constructor(
         private val DEFAULT_DATE_TEXT_COLOR = Color.parseColor("#5e5e5e")
         private val DEFAULT_DATE_LINE_COLOR = Color.parseColor("#f1f1f1")
         private val DEFAULT_TASK_BACKGROUND_COLOR = Color.parseColor("#eaeaea")
+
+        private val HEAD_TRANSLATION = object : FloatPropertyCompat<TaskProgressView>("HeadTranslation") {
+            override fun getValue(view: TaskProgressView): Float = view.currentTimeInMillis.toFloat()
+
+            override fun setValue(view: TaskProgressView, value: Float) {
+                view.head.timeInMillis = value.toLong()
+                view.invalidate()
+            }
+        }
     }
 }
