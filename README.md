@@ -39,8 +39,8 @@ taskProgressView.focusRange(Calendar.getInstance())
 
 ## TODO
 
+- [x] Horizontal scrolling feature 
 - [ ] Different range types like week, month, year
-- [ ] Horizontal scrolling feature 
 - [ ] Task description popup
 
 
