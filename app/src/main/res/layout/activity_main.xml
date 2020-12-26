@@ -11,6 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="200dp"
         android:layout_marginTop="40dp"
+        app:scrollingEnabled="true"
         app:rangeLength="7"
         app:sidePadding="26dp"
         app:taskLineWidth="10dp"
@@ -53,6 +54,21 @@
             android:textColor="#424242"
             android:textSize="13sp"
             android:textAllCaps="false"/>
+
+        <Button
+            android:id="@+id/buttonToggleScrolling"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="8dp"
+            android:layout_marginVertical="12dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingHorizontal="12dp"
+            android:paddingVertical="8dp"
+            android:text="Disable scrolling"
+            android:textAllCaps="false"
+            android:textColor="#424242"
+            android:textSize="13sp" />
 
     </LinearLayout>
 
