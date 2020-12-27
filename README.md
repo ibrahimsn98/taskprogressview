@@ -3,6 +3,7 @@
 A lightweight calendar task progress view library for Android
 
 [![](https://jitpack.io/v/ibrahimsn98/taskprogressview.svg)](https://jitpack.io/#ibrahimsn98/taskprogressview)
+[![](https://androidweekly.net/issues/issue-446/badge)](https://androidweekly.net/issues/issue-446)
 
 
 ## GIF
